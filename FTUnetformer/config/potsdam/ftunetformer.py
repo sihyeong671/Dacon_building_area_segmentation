@@ -6,10 +6,10 @@ from catalyst.contrib.nn import Lookahead
 from catalyst import utils
 
 # training hparam
-max_epoch = 45
+max_epoch = 100
 ignore_index = len(CLASSES)
-train_batch_size = 2
-val_batch_size = 2
+train_batch_size = 8
+val_batch_size = 8
 lr = 6e-4
 weight_decay = 2.5e-4
 backbone_lr = 6e-5
@@ -17,9 +17,9 @@ backbone_weight_decay = 2.5e-4
 num_classes = len(CLASSES)
 classes = CLASSES
 
-weights_name = "ftunetformer-768-crop-ms-e45"
+weights_name = "ftunetformer-256-crop-ms-e45"
 weights_path = "model_weights/potsdam/{}".format(weights_name)
-test_weights_name = "ftunetformer-768-crop-ms-e45"
+test_weights_name = "ftunetformer-256-crop-ms-e45"
 log_name = 'potsdam/{}'.format(weights_name)
 monitor = 'val_F1'
 monitor_mode = 'max'

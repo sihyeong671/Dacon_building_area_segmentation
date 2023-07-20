@@ -53,7 +53,6 @@ class Supervision_Train(pl.LightningModule):
 
         prediction = self.net(img)
         loss = self.loss(prediction, mask)
-
         if self.config.use_aux_loss:
             pre_mask = nn.Softmax(dim=1)(prediction[0])
         else:
@@ -62,16 +61,17 @@ class Supervision_Train(pl.LightningModule):
         pre_mask = pre_mask.argmax(dim=1)
         for i in range(mask.shape[0]):
             self.metrics_train.add_batch(mask[i].cpu().numpy(), pre_mask[i].cpu().numpy())
-
         return {"loss": loss}
 
     def on_train_epoch_end(self):
+        Dice = 0
         if 'vaihingen' in self.config.log_name:
             mIoU = np.nanmean(self.metrics_train.Intersection_over_Union()[:-1])
             F1 = np.nanmean(self.metrics_train.F1()[:-1])
         elif 'potsdam' in self.config.log_name:
-            mIoU = np.nanmean(self.metrics_train.Intersection_over_Union()[:-1])
-            F1 = np.nanmean(self.metrics_train.F1()[:-1])
+            mIoU = np.nanmean(self.metrics_train.Intersection_over_Union()[:])
+            F1 = np.nanmean(self.metrics_train.F1()[:])
+            Dice = np.nanmean(self.metrics_train.Dice()[:])
         elif 'whubuilding' in self.config.log_name:
             mIoU = np.nanmean(self.metrics_train.Intersection_over_Union()[:-1])
             F1 = np.nanmean(self.metrics_train.F1()[:-1])
@@ -87,17 +87,19 @@ class Supervision_Train(pl.LightningModule):
 
         OA = np.nanmean(self.metrics_train.OA())
         iou_per_class = self.metrics_train.Intersection_over_Union()
+        dice_per_class = self.metrics_train.Dice()
         eval_value = {'mIoU': mIoU,
                       'F1': F1,
-                      'OA': OA}
+                      'OA': OA,
+                      'Dice': Dice}
         print('train:', eval_value)
 
         iou_value = {}
-        for class_name, iou in zip(self.config.classes, iou_per_class):
+        for class_name, iou in zip(self.config.classes, dice_per_class):
             iou_value[class_name] = iou
         print(iou_value)
         self.metrics_train.reset()
-        log_dict = {'train_mIoU': mIoU, 'train_F1': F1, 'train_OA': OA}
+        log_dict = {'train_mIoU': mIoU, 'train_F1': F1, 'train_OA': OA, 'train_Dice': Dice}
         self.log_dict(log_dict, prog_bar=True)
 
     def validation_step(self, batch, batch_idx):
@@ -107,17 +109,18 @@ class Supervision_Train(pl.LightningModule):
         pre_mask = pre_mask.argmax(dim=1)
         for i in range(mask.shape[0]):
             self.metrics_val.add_batch(mask[i].cpu().numpy(), pre_mask[i].cpu().numpy())
-
         loss_val = self.loss(prediction, mask)
         return {"loss_val": loss_val}
 
     def on_validation_epoch_end(self):
+        Dice = 0
         if 'vaihingen' in self.config.log_name:
             mIoU = np.nanmean(self.metrics_val.Intersection_over_Union()[:-1])
             F1 = np.nanmean(self.metrics_val.F1()[:-1])
         elif 'potsdam' in self.config.log_name:
-            mIoU = np.nanmean(self.metrics_val.Intersection_over_Union()[:-1])
-            F1 = np.nanmean(self.metrics_val.F1()[:-1])
+            mIoU = np.nanmean(self.metrics_val.Intersection_over_Union()[:])
+            F1 = np.nanmean(self.metrics_val.F1()[:])
+            Dice = np.nanmean(self.metrics_val.Dice()[:])
         elif 'whubuilding' in self.config.log_name:
             mIoU = np.nanmean(self.metrics_val.Intersection_over_Union()[:-1])
             F1 = np.nanmean(self.metrics_val.F1()[:-1])
@@ -133,18 +136,20 @@ class Supervision_Train(pl.LightningModule):
 
         OA = np.nanmean(self.metrics_val.OA())
         iou_per_class = self.metrics_val.Intersection_over_Union()
+        dice_per_class = self.metrics_val.Dice()
 
         eval_value = {'mIoU': mIoU,
                       'F1': F1,
-                      'OA': OA}
+                      'OA': OA,
+                      'Dice': Dice}
         print('val:', eval_value)
         iou_value = {}
-        for class_name, iou in zip(self.config.classes, iou_per_class):
-            iou_value[class_name] = iou
+        for class_name, dc in zip(self.config.classes, dice_per_class):
+            iou_value[class_name] = dc
         print(iou_value)
 
         self.metrics_val.reset()
-        log_dict = {'val_mIoU': mIoU, 'val_F1': F1, 'val_OA': OA}
+        log_dict = {'val_mIoU': mIoU, 'val_F1': F1, 'val_OA': OA, 'val_Dice': Dice}
         self.log_dict(log_dict, prog_bar=True)
 
     def configure_optimizers(self):
@@ -168,6 +173,7 @@ def main():
     warnings.filterwarnings(action='ignore')
     args = get_args()
     config = py2cfg(args.config_path)
+    print(config.classes)
     seed_everything(42)
 
     checkpoint_callback = ModelCheckpoint(save_top_k=config.save_top_k, monitor=config.monitor,

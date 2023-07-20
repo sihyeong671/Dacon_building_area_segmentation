@@ -942,7 +942,7 @@ class FTUNetFormer(nn.Module):
                  num_heads=(3, 6, 12, 24),
                  freeze_stages=-1,
                  window_size=8,
-                 num_classes=6
+                 num_classes=2
                  ):
         super().__init__()
 
