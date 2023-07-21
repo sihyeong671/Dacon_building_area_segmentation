@@ -2,6 +2,7 @@
 /__pycache__
 /data_process/data
 /data
+.ipynb_checkpoints
 
 Pipfile
 pipfile.lock

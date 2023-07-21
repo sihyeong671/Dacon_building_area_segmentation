@@ -3,7 +3,7 @@
 ### geoseg/dataset
 
 POSTDAM Dataset 코드 수정
--  MASK 이미지를 읽어오는 부분을 0과 1로 읽어오도록 수정함
+- MASK 이미지를 읽어오는 부분을 0과 1로 읽어오도록 수정함
 - 빌딩만 예측하므로 class는 빌딩만 설정
 ### Config
  - postdam/ftunetformer 폴더의 데이터셋 정의 폴더 수정(rural, urban 삭제, 우리 데이터셋 폴더로 연결)
