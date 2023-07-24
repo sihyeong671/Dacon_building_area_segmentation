@@ -1,3 +1,4 @@
+from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader
 from geoseg.losses import *
 from geoseg.datasets.potsdam_dataset import *
@@ -6,24 +7,25 @@ from catalyst.contrib.nn import Lookahead
 from catalyst import utils
 
 # training hparam
-max_epoch = 100
+max_epoch = 200
 ignore_index = len(CLASSES)
-train_batch_size = 8
-val_batch_size = 8
+train_batch_size = 4
+val_batch_size = 4
 lr = 6e-4
 weight_decay = 2.5e-4
 backbone_lr = 6e-5
 backbone_weight_decay = 2.5e-4
 num_classes = len(CLASSES)
 classes = CLASSES
+class_weights = torch.tensor([0.5, 1.0])
 
-weights_name = "ftunetformer-256-crop-ms-e45"
+weights_name = "ftunetformer-loss-1024"
 weights_path = "model_weights/potsdam/{}".format(weights_name)
-test_weights_name = "ftunetformer-256-crop-ms-e45"
+test_weights_name = "ftunetformer-loss-1024"
 log_name = 'potsdam/{}'.format(weights_name)
 monitor = 'val_F1'
 monitor_mode = 'max'
-save_top_k = 1
+save_top_k = 2
 save_last = False
 check_val_every_n_epoch = 1
 pretrained_ckpt_path = None # the path for the pretrained model weight
@@ -34,8 +36,8 @@ resume_ckpt_path = None  # whether continue training with the checkpoint, defaul
 net = ft_unetformer(num_classes=num_classes, decoder_channels=256)
 
 # define the loss
-loss = JointLoss(SoftCrossEntropyLoss(smooth_factor=0.05, ignore_index=ignore_index),
-                 DiceLoss(smooth=0.05, ignore_index=ignore_index), 1.0, 1.0)
+loss = JointLoss(CrossEntropyLoss(label_smoothing=0.05, ignore_index=ignore_index, weight=class_weights),
+                 LovaszLoss(ignore=ignore_index), 0.8, 0.2)
 
 use_aux_loss = False
 
