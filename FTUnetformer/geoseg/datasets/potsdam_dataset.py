@@ -21,17 +21,27 @@ TEST_IMG_SIZE = (1024, 1024)
 
 def get_training_transform():
     train_transform = [
-        albu.RandomBrightnessContrast(brightness_limit=0.25, contrast_limit=0.25, p=0.15),
+        albu.CoarseDropout(max_holes=4, max_height=200, max_width=200, min_holes=1, min_height=50, min_width=50, p=0.5),
         albu.OneOf([
-            albu.HorizontalFlip(p=0.5),
-            albu.RandomRotate90(p=0.5),
-            albu.VerticalFlip(p=0.5)
-        ], p=1),
+            albu.RandomBrightnessContrast(brightness_limit=0.25, contrast_limit=0.25, p=1),
+            albu.ColorJitter(brightness=0.25, contrast=0.25, saturation=0.25, hue=0.25, p=1),
+        ], p=0.15),
         albu.OneOf([
-            albu.MotionBlur(p=0.5),
-            albu.OpticalDistortion(p=0.5),
-            albu.GaussNoise(p=0.5)
-        ], p=1),
+            albu.HorizontalFlip(p=1),
+            albu.RandomRotate90(p=1),
+            albu.VerticalFlip(p=1)
+        ], p=0.5),
+        albu.OneOf([
+            albu.MotionBlur(p=1),
+            albu.OpticalDistortion(p=1),
+            albu.GaussianBlur(p=1),
+        ], p=0.5),
+        albu.OneOf([
+            albu.GaussNoise(p=1),
+            albu.CLAHE(p=1),
+            albu.JpegCompression(quality_lower=80, quality_upper=100, p=1),
+        ], p=0.5),
+
         albu.Normalize()
     ]
     return albu.Compose(train_transform)
@@ -39,7 +49,7 @@ def get_training_transform():
 
 def train_aug(img, mask):
     crop_aug = Compose([RandomScale(scale_list=[0.75, 1.0, 1.25, 1.5], mode='value'),
-                        SmartCropV1(crop_size=512, max_ratio=0.75, ignore_index=len(CLASSES), nopad=False)])
+                        SmartCropV1(crop_size=640, max_ratio=0.75, ignore_index=len(CLASSES), nopad=False)])
     img, mask = crop_aug(img, mask)
     img, mask = np.array(img), np.array(mask)
     aug = get_training_transform()(image=img.copy(), mask=mask.copy())
