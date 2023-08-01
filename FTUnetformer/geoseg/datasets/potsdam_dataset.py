@@ -18,20 +18,26 @@ PALETTE = [[128,0,0],[0, 128, 0]]
 ORIGIN_IMG_SIZE = (1024, 1024)
 INPUT_IMG_SIZE = (1024, 1024)
 TEST_IMG_SIZE = (1024, 1024)
-
 def get_training_transform():
     train_transform = [
-        albu.RandomBrightnessContrast(brightness_limit=0.25, contrast_limit=0.25, p=0.15),
+        # Pixel aug
         albu.OneOf([
-            albu.HorizontalFlip(p=0.5),
-            albu.RandomRotate90(p=0.5),
-            albu.VerticalFlip(p=0.5)
-        ], p=1),
+            albu.MotionBlur(p=1),
+            albu.GaussNoise(p=1),
+            albu.CLAHE(p=1),
+            albu.Sharpen(p=1),
+            albu.MultiplicativeNoise(p=1)
+        ], p=0.5),
+        # Geometric aug
         albu.OneOf([
-            albu.MotionBlur(p=0.5),
-            albu.OpticalDistortion(p=0.5),
-            albu.GaussNoise(p=0.5)
-        ], p=1),
+            albu.HorizontalFlip(p=1),
+            albu.ShiftScaleRotate(rotate_limit=(-10, 10), p=1),
+            albu.CoarseDropout(min_holes=2, max_holes=10, max_height=60, min_height=50, max_width=60, min_width=50, p=1),
+            albu.Affine(shear={'x': (-10, 10)}, p=1),
+            albu.Affine(shear={'y': (-10, 10)}, p=1),
+            albu.Affine(shear=(-10, 10), p=1),
+        ], p=0.5),
+        
         albu.Normalize()
     ]
     return albu.Compose(train_transform)

@@ -2,6 +2,7 @@ import warnings
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from tools.cfg import py2cfg
 import os
 import torch
@@ -68,7 +69,7 @@ class Supervision_Train(pl.LightningModule):
         if 'vaihingen' in self.config.log_name:
             mIoU = np.nanmean(self.metrics_train.Intersection_over_Union()[:-1])
             F1 = np.nanmean(self.metrics_train.F1()[:-1])
-        elif 'potsdam' in self.config.log_name:
+        elif 'buildingsegmentation' in self.config.log_name:
             mIoU = np.nanmean(self.metrics_train.Intersection_over_Union()[:])
             F1 = np.nanmean(self.metrics_train.F1()[:])
             Dice = np.nanmean(self.metrics_train.Dice()[:])
@@ -117,7 +118,7 @@ class Supervision_Train(pl.LightningModule):
         if 'vaihingen' in self.config.log_name:
             mIoU = np.nanmean(self.metrics_val.Intersection_over_Union()[:-1])
             F1 = np.nanmean(self.metrics_val.F1()[:-1])
-        elif 'potsdam' in self.config.log_name:
+        elif 'buildingsegmentation' in self.config.log_name:
             mIoU = np.nanmean(self.metrics_val.Intersection_over_Union()[:])
             F1 = np.nanmean(self.metrics_val.F1()[:])
             Dice = np.nanmean(self.metrics_val.Dice()[:])
@@ -180,15 +181,24 @@ def main():
                                           save_last=config.save_last, mode=config.monitor_mode,
                                           dirpath=config.weights_path,
                                           filename=config.weights_name)
+    
+    early_stop_callback = EarlyStopping(
+        monitor="val_mIoU",
+        min_delta=0.00,
+        patience=15,
+        verbose=False,
+        mode="max"
+    )
+    
     logger = CSVLogger('lightning_logs', name=config.log_name)
 
     model = Supervision_Train(config)
     if config.pretrained_ckpt_path:
         model = Supervision_Train.load_from_checkpoint(config.pretrained_ckpt_path, config=config)
 
-    trainer = pl.Trainer(devices=config.gpus, max_epochs=config.max_epoch, accelerator='auto',
+    trainer = pl.Trainer(devices=config.gpus, max_epochs=config.max_epoch, accelerator='auto', accumulate_grad_batches=2,
                          check_val_every_n_epoch=config.check_val_every_n_epoch,
-                         callbacks=[checkpoint_callback], strategy='auto',
+                         callbacks=[checkpoint_callback, early_stop_callback], strategy='auto',
                          logger=logger)
     trainer.fit(model=model, ckpt_path=config.resume_ckpt_path)
 

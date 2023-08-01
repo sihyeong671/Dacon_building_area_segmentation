@@ -18,10 +18,10 @@ backbone_weight_decay = 2.5e-4
 num_classes = len(CLASSES)
 classes = CLASSES
 
-weights_name = "dcswin-small-1024-ms-512crop-e30"
-weights_path = "model_weights/potsdam/{}".format(weights_name)
-test_weights_name = "dcswin-small-1024-ms-512crop-e30"
-log_name = 'potsdam/{}'.format(weights_name)
+weights_name = "ftunetformer-loss-512"
+weights_path = "model_weights/buildingsegmentation/{}".format(weights_name)
+test_weights_name = "ftunetformer-loss-512-v4"
+log_name = 'buildingsegmentation/{}'.format(weights_name)
 monitor = 'val_F1'
 monitor_mode = 'max'
 save_top_k = 1
@@ -77,7 +77,7 @@ train_dataset = PotsdamDataset(data_root='data/potsdam/train', mode='train',
                                mosaic_ratio=0.25, transform=train_aug)
 
 val_dataset = PotsdamDataset(transform=val_aug)
-test_dataset = PotsdamDataset(data_root='data/potsdam/test',
+test_dataset = PotsdamDataset(data_root='data/test_img',
                               transform=val_aug)
 
 train_loader = DataLoader(dataset=train_dataset,
